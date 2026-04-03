@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CHARISMA LAB | 魅力拉扯實驗室</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@900&family=Noto+Sans+TC:wght@900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg: #f3e8ff; --main: #000; --orange: #ff9000; --pink: #ff00ff; 
+            --cyan: #00f0ff; --green: #00ff9f; --white: #fff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background-color: var(--bg); font-family: 'Lexend', 'Noto Sans TC', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 20px; transition: background-color 0.5s;
+        }
+
+        .container {
+            width: 100%; max-width: 420px; background: var(--white);
+            border: 6px solid var(--main); box-shadow: 16px 16px 0px var(--main);
+            padding: 40px 25px; position: relative; z-index: 10; transition: all 0.3s;
+        }
+
+        .typing::after { content: '|'; animation: blink 0.7s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .tag {
+            background: var(--main); color: var(--white); display: inline-block;
+            padding: 6px 16px; font-size: 11px; font-weight: 900; margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        h1 { font-size: 42px; font-weight: 900; line-height: 0.95; margin-bottom: 30px; letter-spacing: -2px; }
+
+        .btn {
+            background: var(--orange); border: 4px solid var(--main);
+            padding: 20px; font-size: 18px; font-weight: 900;
+            cursor: pointer; box-shadow: 6px 6px 0px var(--main);
+            width: 100%; transition: transform 0.1s, box-shadow 0.1s; margin-top: 15px;
+            text-transform: uppercase; color: var(--main);
+        }
+        .btn:active { transform: translate(4px, 4px); box-shadow: 0px 0px 0px; }
+
+        #quiz-page, #result-page { display: none; }
+        
+        #question { 
+            font-size: 24px; font-weight: 900; margin-bottom: 30px; line-height: 1.4;
+            min-height: 100px; border-left: 10px solid var(--main); padding-left: 15px;
+        }
+        
+        .opt {
+            background: var(--white); border: 3px solid var(--main);
+            padding: 16px; font-size: 16px; font-weight: 800;
+            text-align: left; cursor: pointer; margin-bottom: 12px;
+            box-shadow: 4px 4px 0px var(--main); width: 100%; transition: background-color 0.1s;
+        }
+        .opt:hover { background: #eee; }
+
+        #score-display { font-size: 120px; font-weight: 900; letter-spacing: -10px; margin: 10px 0; transition: color 0.3s; color: var(--main); }
+        #rank-zh { font-size: 32px; font-weight: 900; margin-bottom: 10px; line-height: 1.2; transition: color 0.3s; color: var(--main); }
+        #rank-en { font-size: 14px; font-weight: 900; opacity: 0.5; margin-bottom: 30px; letter-spacing: 1px; color: var(--main); }
+
+        .black-mode { background-color: #000 !important; }
+        .pink-text-important { color: var(--pink) !important; opacity: 1 !important; }
+
+        .share-hint {
+            margin-top: 30px; font-size: 11px; font-weight: 900;
+            color: #666; border-top: 2px dashed #ccc; padding-top: 15px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" id="main-box">
+    <div id="start-page">
+        <div class="tag">CHARISMA LAB // SYSTEM START</div>
+        <h1>魅力<br>拉扯<br>實驗室</h1>
+        <p style="font-weight: 800; margin-bottom: 30px; line-height: 1.5; color: #000;">[ 核心診斷 ] 隨機選取 5 項指標，鑑定你的社交內核。</p>
+        <button class="btn" onclick="startQuiz()">啟動鑑定 [RUN]</button>
+    </div>
+
+    <div id="quiz-page">
+        <div class="tag">DIAGNOSING <span id="progress">1 / 5</span></div>
+        <div id="question" class="typing"></div>
+        <div id="options"></div>
+    </div>
+
+    <div id="result-page">
+        <div class="tag">FINAL DIAGNOSIS REPORT</div>
+        <div id="score-display">0</div>
+        <div id="rank-zh"></div>
+        <div id="rank-en"></div>
+        <div class="share-hint" id="share-text">
+            SCREENSHOT THIS TO THREADS / IG STORY<br>
+            #CHARISMALAB #魅力拉扯實驗室 #人間清醒
+        </div>
+        <button class="btn" id="retry-btn" onclick="location.reload()"></button>
+    </div>
+</div>
+
+<script>
+    let score = 0, currentIdx = 0;
+    let selectedBank = [];
+
+    const fullBank = [
+        { s: "對方回訊息極慢，甚至經常輪迴，你會？", o: ["問對方在忙什麼", "發一張精彩動態但不回對方", "直接打語音通訊", "默默守著手機等待回覆"], a: 1 },
+        { s: "第一次單獨見面結束，到家後的訊息？", o: ["「今日超開心，下次再見！」", "「謝謝招待，我到家了。」", "（等對方先主動傳訊息）", "「你覺得我今日的造型如何？」"], a: 2 },
+        { s: "看到對方正在與他人熱烈互動聊天？", o: ["衝過去加入話題", "回家發傷心文字動態", "在對方眼前與別人聊得更開", "直接發脾氣問對方那是誰"], a: 2 },
+        { s: "深夜 11 點，對方傳來：『睡了嗎？』", o: ["秒回：『未呀，你呢？』", "隔 15 分鐘回：『仲未，掛住我？』", "不回，明早回：『早晨』", "問對方：『咁夜搵我有咩事？』"], a: 1 },
+        { s: "對方斷聯兩天重新出現說：『忙。』", o: ["問：『忙咩呀咁耐唔見人？』", "回：『哦。』然後繼續失蹤", "回：『好彩你忙，我呢兩日都玩得好開心』", "發長文表達情緒不滿"], a: 2 },
+        { s: "見面時對方遲到 30 分鐘，你會？", o: ["在原地等待，見面時說沒關係", "不等了，去逛街並發定位給對方", "奪命連環 Call 催促", "見面後整晚擺臭臉"], a: 1 },
+        { s: "對方問：『你覺得我呢個人點？』", o: ["認真誇獎對方一堆優點", "回：『幾好啊，除咗有時幾煩』", "直接表白：『我好鍾意你』", "回：『你估下我點睇你？』"], a: 3 },
+        { s: "發現對方在交友 App 依然活躍，你會？", o: ["質問對方為什麼還在用", "自己也下載回來，刷到就點讚", "默默傷心並對對方更好", "直接封鎖對方"], a: 1 },
+        { s: "對方回覆你訊息只有一個字：『嗯。』", o: ["問：『你係咪唔開心？』", "回一個：『。』比對方更簡短", "直接不回，等對方開新話題", "傳一張搞笑圖片轉移視線"], a: 2 },
+        { s: "見到對方與前度對象還有聯絡，你會？", o: ["要求對方刪除前度聯絡", "平靜講：『幾好啊，我都同前度幾好』", "默默忍受，不敢發聲", "暗中調查他們聊什麼"], a: 1 },
+        { s: "對方突然讚你今天造型很好看，你會？", o: ["開心到狂讚回對方", "回：『多謝，我都覺』", "回：『你今日終於帶眼返工喇？』", "害羞地說：『邊有呀...』"], a: 2 },
+        { s: "對方探聽：『你之前有過幾個前度？』", o: ["如實報數，詳細交代", "回：『多到數唔晒，你排緊隊』", "回：『你係想了解我定想審問我？』", "話：『唔想講，驚你自卑』"], a: 2 },
+        { s: "對方說：『我聽日好忙，未必搵到你』", o: ["回：『好啦，你忙完話我知』", "回：『啱晒，我聽日都約咗人』", "問：『忙咩呀？要去邊？』", "回：『哦。』"], a: 1 },
+        { s: "對方遲了半小時才回覆你的訊息，你會？", o: ["一見到就秒回", "等一個小時之後才回覆", "問對方剛才去了哪裡", "不回住，直到對方再傳多條過來"], a: 1 },
+        { s: "對方發布了與其他異性的合照，你會？", o: ["去問那個人是誰", "扮睇唔到，不點讚不留言", "留言：『幾襯喎！』", "自己也發一張與他人的合照"], a: 2 }
+    ];
+
+    // Fisher-Yates Shuffle 算法
+    function shuffle(array) {
+        let currentIndex = array.length, randomIndex;
+        while (currentIndex != 0) {
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+            [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+        }
+        return array;
+    }
+
+    function startQuiz() {
+        const shuffledBank = shuffle([...fullBank]); // 使用展開運算符避免修改原陣列
+        selectedBank = shuffledBank.slice(0, 5);
+        score = 0; currentIdx = 0;
+        document.getElementById('start-page').style.display = 'none';
+        document.getElementById('quiz-page').style.display = 'block';
+        showQuestion();
+    }
+
+    function typeWriter(text, i, fnCallback) {
+        if (i < text.length) {
+            document.getElementById("question").innerHTML = text.substring(0, i+1);
+            setTimeout(() => typeWriter(text, i + 1, fnCallback), 40);
+        } else if (typeof fnCallback == 'function') {
+            setTimeout(fnCallback, 200);
+        }
+    }
+
+    function showQuestion() {
+        const q = selectedBank[currentIdx];
+        document.getElementById('progress').innerText = (currentIdx + 1) + " / 5";
+        const grid = document.getElementById('options');
+        grid.innerHTML = ''; 
+        typeWriter(q.s, 0, () => {
+            q.o.forEach((o, i) => {
+                const b = document.createElement('button');
+                b.className = 'opt'; b.innerText = o;
+                b.onclick = () => { if(i === q.a) score += 2; nextQuestion(); };
+                grid.appendChild(b);
+            });
+        });
+    }
+
+    function nextQuestion() {
+        currentIdx++;
+        if(currentIdx < selectedBank.length) showQuestion();
+        else showResult();
+    }
+
+    function showResult() {
+        document.getElementById('quiz-page').style.display = 'none';
+        document.getElementById('result-page').style.display = 'block';
+        let fs = Math.round(score);
+        const sEl = document.getElementById('score-display');
+        const rZh = document.getElementById('rank-zh');
+        const rEn = document.getElementById('rank-en');
+        const rBtn = document.getElementById('retry-btn');
+        const box = document.getElementById('main-box');
+        const share = document.getElementById('share-text');
+
+        sEl.innerText = fs;
+
+        if (fs >= 9) {
+            rZh.innerText = "【頂級獵手】"; rEn.innerText = "APEX PREDATOR";
+            rBtn.innerText = "下一場獵殺 NEXT HUNT";
+            rBtn.style.background = "var(--cyan)";
+            sEl.style.color = "var(--cyan)";
+        } else if (fs >= 6) {
+            rZh.innerText = "【曖昧玩家】"; rEn.innerText = "VIBE MASTER";
+            rBtn.innerText = "進階修煉 UPGRADE";
+            rBtn.style.background = "var(--green)";
+            sEl.style.color = "var(--green)";
+        } else if (fs > 0) {
+            rZh.innerText = "【純愛戰神】"; rEn.innerText = "PURE HEART WARRIOR";
+            rBtn.innerText = "重拾武裝 RE-ARM";
+            rBtn.style.background = "var(--orange)";
+            sEl.style.color = "var(--orange)";
+        } else {
+            rZh.innerText = "【魅力黑洞】"; rEn.innerText = "CHARISMA BLACK HOLE";
+            rBtn.innerText = "重新做人 REBORN";
+            rBtn.style.background = "var(--pink)";
+            rBtn.style.borderColor = "var(--pink)";
+            document.body.classList.add('black-mode');
+            box.style.borderColor = "var(--pink)";
+            box.style.boxShadow = "20px 20px 0px var(--pink)";
+            sEl.classList.add('pink-text-important'); rZh.classList.add('pink-text-important');
+            share.style.color = "var(--pink)";
+        }
+    }
+</script>
+</body>
+</html>
